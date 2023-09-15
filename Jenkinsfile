@@ -31,7 +31,8 @@ pipeline {
                 sh 'cd /home/my/python-project && sudo docker build -t myimage .'
                 sh 'sudo docker run -it -d --name mycontainer -p 5002:5000 myimage'
             }
-
+            
+        }
         stage('Build Stages Branch') {
             when {
                 branch 'stages'
@@ -46,7 +47,7 @@ pipeline {
                 sh 'cd /home/ubuntu/python-project && sudo docker build -t myimage .'
                 sh 'sudo docker run -it -d --name mycontainer -p 5003:5000 myimage'
             }
-
+        }
         stage('Other Branches') {
             when {
                 not {
