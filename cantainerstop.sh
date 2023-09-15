@@ -1,10 +1,14 @@
 #!/bin/bash
 
-# Check if there are running containers
-if [ "$(docker ps -q)" ]; then
-    echo "Stopping and removing running containers..."
-    docker stop $(docker ps -q)
-    docker rm $(docker ps -q -a)
-else
+# Declare and initialize the containerid variable
+containerid=$(docker ps -q)
+
+# Check if the variable is empty (no running containers)
+if [ -z "$containerid" ]; then
     echo "No running containers found."
+else
+    # Stop and remove the running container
+    docker stop "$containerid"
+    docker rm "$containerid"
+    echo "Container $containerid stopped and removed."
 fi
