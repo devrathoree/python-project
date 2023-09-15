@@ -1,5 +1,10 @@
 #!/bin/bash
-set -e
 
-container_id=$(docker ps | awk -F " " '{print $1}')
-docker rm -f $container_id
+# Check if there are running containers
+if [ "$(docker ps -q)" ]; then
+    echo "Stopping and removing running containers..."
+    docker stop $(docker ps -q)
+    docker rm $(docker ps -q -a)
+else
+    echo "No running containers found."
+fi
