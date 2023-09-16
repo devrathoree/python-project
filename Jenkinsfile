@@ -13,7 +13,7 @@ pipeline {
                 echo 'remove privous contanier'
                 sh 'cd /home/my/python-project && sudo chmod +x cantainerstop.sh && sudo ./cantainerstop.sh'
                 sh 'cd /home/my/python-project && sudo docker build -t myimage .'
-                sh 'sudo docker run -it -d --name mycontainer -p 5001:5000 myimage'
+                sh 'sudo docker run -it -d --name mycontainer -p 5000:5000 myimage'
             }
 
         }
@@ -29,7 +29,7 @@ pipeline {
                 echo 'remove privous contanier'
                 sh 'cd /home/my/python-project && sudo chmod +x cantainerstop.sh && sudo ./cantainerstop.sh'
                 sh 'cd /home/my/python-project && sudo docker build -t myimage .'
-                sh 'sudo docker run -it -d --name mycontainer -p 5002:5000 myimage'
+                sh 'sudo docker run -it -d --name mycontainer -p 5000:5000 myimage'
             }
             
         }
@@ -45,7 +45,7 @@ pipeline {
                 echo 'remove privous contanier'
                 sh 'cd /home/ubuntu/python-project && sudo chmod +x cantainerstop.sh && sudo ./cantainerstop.sh'
                 sh 'cd /home/ubuntu/python-project && sudo docker build -t myimage .'
-                sh 'sudo docker run -it -d --name mycontainer -p 5003:5000 myimage'
+                sh 'sudo docker run -it -d --name mycontainer -p 5000:5000 myimage'
             }
         }
         stage('Other Branches') {
