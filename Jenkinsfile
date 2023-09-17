@@ -14,12 +14,18 @@ pipeline {  agent any
             steps {
               script{
                  echo "This is Deploy step."
-                 def branchName = "${env.BRANCH_NAME}"                 
-                  if(branchName == "master"){
+                 def branchName = "${env.BRANCH_NAME}"
+                  echo "Branch Name: ${branchName}"
+                  if (branchName == "master") {
                     println("Deploying to Prod.")
-                 }
-                 else if(branchName == "test"){
-                    println("Deploying to Test.")                 }              }            }
+                  }  
+                  else if (branchName == "test") {
+                    println("Deploying to Test.")
+                  } 
+                  else {
+                   println("Deploying to some other branch.")
+                  }
+               }              }            }
         }
     }
 }
