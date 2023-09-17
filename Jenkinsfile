@@ -1,4 +1,5 @@
-pipeline {  agent any 
+pipeline {  
+ agent any 
   stages {
         stage('Build') { 
             steps {
@@ -12,10 +13,10 @@ pipeline {  agent any
         }
         stage('Deploy') {         
             steps {
-              script{
-                 echo "This is Deploy step."
-                 def branchName = "${env.BRANCH_NAME}"
-                  echo "Branch Name: ${branchName}"
+                script{
+                   echo "This is Deploy step."
+                   def branchName = "${env.BRANCH_NAME}"
+                    echo "Branch Name: ${branchName}"
                   if (branchName == "master") {
                     println("Deploying to Prod.")
                   }  
@@ -28,4 +29,3 @@ pipeline {  agent any
                }              }            }
         }
     }
-}
