@@ -29,6 +29,6 @@ jobs:
 
       - name: Create Environment File
         run: |
-          echo "${{ steps.secrets.outputs.secret }}" > secret.json
+          printf '%s' '${{ steps.secrets.outputs.secret }}' > secret.json
           echo MY_SECRET_VALUE=$(jq -r '.MY_SECRET_VALUE' secret.json) >> .env
           cat .env
