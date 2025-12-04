@@ -34,6 +34,7 @@ jobs:
           echo "MY_SECRET_VALUE=$(jq -r '.MY_SECRET_VALUE' secret.json)" >> $GITHUB_ENV
           echo "DOCKER_USERNAME=$(jq -r '.DOCKER_USERNAME' secret.json)" >> $GITHUB_ENV
           echo "DOCKER_PASSWORD=$(jq -r '.DOCKER_PASSWORD' secret.json)" >> $GITHUB_ENV
+          echo "EC2_SERVER_KEY=$(jq -r '.EC2_SERVER_KEY' secret.json)" >> $GITHUB_ENV
 
       - name: Login to Docker Hub
         run: |
