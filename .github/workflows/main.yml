@@ -48,6 +48,12 @@ jobs:
         run: |
           docker push $DOCKER_USERNAME/python-app:latest
 
+      - name: Debug SSH
+        run: |
+          echo "${{ secrets.EC2_SERVER_KEY }}" > server.pem
+          chmod 600 server.pem
+          ssh -i server.pem -o StrictHostKeyChecking=no ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "echo connected"
+
       - name: Deploy on EC2 (pull + restart container)
         uses: appleboy/ssh-action@v0.1.5
         with:
