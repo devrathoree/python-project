@@ -20,15 +20,47 @@ jobs:
           aws-region: ${{ secrets.REGION }}
 
       - name: Fetch secret from AWS Secrets Manager
-        id: secrets
+        id: awssecrets
         run: |
           SECRET_JSON=$(aws secretsmanager get-secret-value \
             --secret-id pythonappsecrets \
             --query SecretString --output text)
           echo "secret=$SECRET_JSON" >> $GITHUB_OUTPUT
 
-      - name: Create Environment File
+      - name: Extract Secret Values
+        id: extract
         run: |
-          printf '%s' '${{ steps.secrets.outputs.secret }}' > secret.json
-          echo MY_SECRET_VALUE=$(jq -r '.MY_SECRET_VALUE' secret.json) >> .env
-          cat .env
+          printf '%s' '${{ steps.awssecrets.outputs.secret }}' > secret.json
+          echo "MY_SECRET_VALUE=$(jq -r '.MY_SECRET_VALUE' secret.json)" >> $GITHUB_ENV
+          echo "DOCKER_USERNAME=$(jq -r '.DOCKER_USERNAME' secret.json)" >> $GITHUB_ENV
+          echo "DOCKER_PASSWORD=$(jq -r '.DOCKER_PASSWORD' secret.json)" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        run: |
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+      - name: Build Docker Image
+        run: |
+          docker build -t $DOCKER_USERNAME/python-app:latest .
+
+      - name: Push Docker Image
+        run: |
+          docker push $DOCKER_USERNAME/python-app:latest
+
+      - name: Deploy on EC2 (pull + restart container)
+        uses: appleboy/ssh-action@v0.1.5
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SERVER_KEY }}
+          script: |
+            docker login -u "${{ env.DOCKER_USERNAME }}" -p "${{ env.DOCKER_PASSWORD }}"
+
+            docker pull ${{ env.DOCKER_USERNAME }}/python-app:latest
+
+            docker stop python-app || true
+            docker rm python-app || true
+
+            docker run -d --name python-app -p 5000:5000 \
+              -e MY_SECRET_VALUE="${{ env.MY_SECRET_VALUE }}" \
+              ${{ env.DOCKER_USERNAME }}/python-app:latest
