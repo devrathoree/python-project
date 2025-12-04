@@ -1,0 +1,33 @@
+name: Deploy Flask to EC2
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.REGION }}
+
+      - name: Fetch secret from AWS Secrets Manager
+        id: secrets
+        run: |
+          SECRET_JSON=$(aws secretsmanager get-secret-value \
+            --secret-id myapp/dev/env \
+            --query SecretString --output text)
+          echo "secret=$SECRET_JSON" >> $GITHUB_OUTPUT
+
+      - name: Create Environment File
+        run: |
+          echo "${{ steps.secrets.outputs.secret }}" > secret.json
+          echo MY_SECRET_VALUE=$(jq -r '.MY_SECRET_VALUE' secret.json) >> .env
