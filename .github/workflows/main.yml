@@ -23,7 +23,7 @@ jobs:
         id: secrets
         run: |
           SECRET_JSON=$(aws secretsmanager get-secret-value \
-            --secret-id myapp/dev/env \
+            --secret-id pythonappsecrets \
             --query SecretString --output text)
           echo "secret=$SECRET_JSON" >> $GITHUB_OUTPUT
 
@@ -31,3 +31,4 @@ jobs:
         run: |
           echo "${{ steps.secrets.outputs.secret }}" > secret.json
           echo MY_SECRET_VALUE=$(jq -r '.MY_SECRET_VALUE' secret.json) >> .env
+          cat .env
