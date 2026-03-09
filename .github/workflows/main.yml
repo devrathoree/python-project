@@ -1,74 +1,109 @@
-name: Deploy Flask to EC2
+# name: Deploy Flask to EC2
+
+# on:
+#   push:
+#     branches: ["main"]
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Configure AWS Credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+#           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+#           aws-region: ${{ secrets.REGION }}
+
+#       - name: Fetch secret from AWS Secrets Manager
+#         id: awssecrets
+#         run: |
+#           SECRET_JSON=$(aws secretsmanager get-secret-value \
+#             --secret-id pythonappsecrets \
+#             --query SecretString --output text)
+#           echo "secret=$SECRET_JSON" >> $GITHUB_OUTPUT
+
+#       - name: Extract Secret Values
+#         id: extract
+#         run: |
+#           printf '%s' '${{ steps.awssecrets.outputs.secret }}' > secret.json
+#           echo "MY_SECRET_VALUE=$(jq -r '.MY_SECRET_VALUE' secret.json)" >> $GITHUB_ENV
+#           echo "DOCKER_USERNAME=$(jq -r '.DOCKER_USERNAME' secret.json)" >> $GITHUB_ENV
+#           echo "DOCKER_PASSWORD=$(jq -r '.DOCKER_PASSWORD' secret.json)" >> $GITHUB_ENV
+#           echo "EC2_USER=$(jq -r '.EC2_USER' secret.json)" >> $GITHUB_ENV
+#           echo "EC2_HOST=$(jq -r '.EC2_HOST' secret.json)" >> $GITHUB_ENV
+
+#       - name: Login to Docker Hub
+#         run: |
+#           echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+#       - name: Build Docker Image
+#         run: |
+#           docker build -t $DOCKER_USERNAME/python-app:latest .
+
+#       - name: Push Docker Image
+#         run: |
+#           docker push $DOCKER_USERNAME/python-app:latest
+
+#       - name: Debug SSH
+#         run: |
+#           echo "${{ secrets.EC2_SERVER_KEY }}" > server.pem
+#           chmod 600 server.pem
+#           ssh -i server.pem -o StrictHostKeyChecking=no ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "echo connected"
+
+#       - name: Deploy on EC2 (pull + restart container)
+#         uses: appleboy/ssh-action@v0.1.5
+#         with:
+#           host: ${{ env.EC2_HOST }}
+#           username: ${{ env.EC2_USER }}
+#           key: ${{ secrets.EC2_SERVER_KEY }}
+#           script: |
+#             docker login -u "${{ env.DOCKER_USERNAME }}" -p "${{ env.DOCKER_PASSWORD }}"
+
+#             docker pull ${{ env.DOCKER_USERNAME }}/python-app:latest
+
+#             docker stop python-app || true
+#             docker rm python-app || true
+
+#             docker run -d --name python-app -p 5000:5000 \
+#               -e MY_SECRET_VALUE="${{ env.MY_SECRET_VALUE }}" \
+#               ${{ env.DOCKER_USERNAME }}/python-app:latest
+
+
+
+name: List S3 Buckets
 
 on:
+  workflow_dispatch:
   push:
-    branches: ["main"]
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  deploy:
+  list-s3:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.REGION }}
+          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/github-actions-role
+          aws-region: us-east-1
 
-      - name: Fetch secret from AWS Secrets Manager
-        id: awssecrets
-        run: |
-          SECRET_JSON=$(aws secretsmanager get-secret-value \
-            --secret-id pythonappsecrets \
-            --query SecretString --output text)
-          echo "secret=$SECRET_JSON" >> $GITHUB_OUTPUT
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
 
-      - name: Extract Secret Values
-        id: extract
-        run: |
-          printf '%s' '${{ steps.awssecrets.outputs.secret }}' > secret.json
-          echo "MY_SECRET_VALUE=$(jq -r '.MY_SECRET_VALUE' secret.json)" >> $GITHUB_ENV
-          echo "DOCKER_USERNAME=$(jq -r '.DOCKER_USERNAME' secret.json)" >> $GITHUB_ENV
-          echo "DOCKER_PASSWORD=$(jq -r '.DOCKER_PASSWORD' secret.json)" >> $GITHUB_ENV
-          echo "EC2_USER=$(jq -r '.EC2_USER' secret.json)" >> $GITHUB_ENV
-          echo "EC2_HOST=$(jq -r '.EC2_HOST' secret.json)" >> $GITHUB_ENV
-
-      - name: Login to Docker Hub
-        run: |
-          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-
-      - name: Build Docker Image
-        run: |
-          docker build -t $DOCKER_USERNAME/python-app:latest .
-
-      - name: Push Docker Image
-        run: |
-          docker push $DOCKER_USERNAME/python-app:latest
-
-      - name: Debug SSH
-        run: |
-          echo "${{ secrets.EC2_SERVER_KEY }}" > server.pem
-          chmod 600 server.pem
-          ssh -i server.pem -o StrictHostKeyChecking=no ${{ env.EC2_USER }}@${{ env.EC2_HOST }} "echo connected"
-
-      - name: Deploy on EC2 (pull + restart container)
-        uses: appleboy/ssh-action@v0.1.5
-        with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USER }}
-          key: ${{ secrets.EC2_SERVER_KEY }}
-          script: |
-            docker login -u "${{ env.DOCKER_USERNAME }}" -p "${{ env.DOCKER_PASSWORD }}"
-
-            docker pull ${{ env.DOCKER_USERNAME }}/python-app:latest
-
-            docker stop python-app || true
-            docker rm python-app || true
-
-            docker run -d --name python-app -p 5000:5000 \
-              -e MY_SECRET_VALUE="${{ env.MY_SECRET_VALUE }}" \
-              ${{ env.DOCKER_USERNAME }}/python-app:latest
+      - name: List All S3 Buckets
+        run: aws s3 ls
